@@ -1,4 +1,2 @@
 .idea
-nlp/__pycache__
-notebooks/__pycache__
-ocr/__pycache__
+*/__pycache__/

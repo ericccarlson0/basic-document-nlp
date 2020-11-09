@@ -73,7 +73,7 @@ with open(csv_dir, "w", newline="") as csv_file:
 import json
 
 json_obj = json.dumps(word_label_counts, indent=4)
-with open("../resources/CDIP_OCR_lower.json", "w") as json_file:
+with open("../resources/CDIP_OCR.json", "w") as json_file:
     json_file.write(json_obj)
 
 # %% Visualize rotations.
