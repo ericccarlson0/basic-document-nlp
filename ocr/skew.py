@@ -18,7 +18,12 @@ def score_skew(array, skew):
     return histogram, score
 
 def correct_skew(original, dd=0.20, max_skew=4):
-    gray = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+    try:
+        gray = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+    except cv2.error:
+        print("ERROR: could not convert BGR2GRAY")
+        raise ValueError(f"Array of size {original.size} could not be corrected.")
+
     thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
 
     skews = np.arange(-max_skew, max_skew + dd, dd)

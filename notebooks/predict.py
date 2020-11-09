@@ -13,9 +13,7 @@ from ocr import skew
 
 file = open("../resources/CDIP_OCR.json")
 word_label_counts = json.load(file)
-print(f"""
-    Total words in "word label counts": {len(word_label_counts)}
-""")
+print(f"Total words in dict: {len(word_label_counts)}")
 
 num_labels = 16
 
@@ -30,8 +28,8 @@ def get_label_dist(w: str) -> List:
             # Convert both the label and the label counts to int in case.
             dist[int(label)] += int(label_counts[label])
 
-        total_count = sum(dist)
-        dist = [count / total_count for count in dist]
+        count = sum(dist)
+        dist = [d / count for d in dist]
 
     return dist
 
@@ -44,7 +42,10 @@ zero_word_counts = 0
 # produced from the counts in the dictionary. All of these probabilities, for each word in the doc,
 # must be combined somehow.
 def predict_doc_dist(array: np.ndarray) -> List:
-    rot_array, _ = skew.correct_skew(array)
+    try:
+        rot_array, _ = skew.correct_skew(array)
+    except ValueError:
+        return [0] * num_labels
 
     word_set = set()
     words = pytesseract.image_to_string(rot_array).split()
@@ -67,7 +68,7 @@ def predict_doc_dist(array: np.ndarray) -> List:
 
 test_dir = "/Users/ericcarlson/Desktop/Datasets/RVL_CDIP/labels/test.txt"
 base_dir = "/Users/ericcarlson/Desktop/Datasets/RVL_CDIP/images"
-max_count = 2048
+max_count = 512
 total_count = 0
 correct_count = 0
 
@@ -83,6 +84,8 @@ with open(test_dir, "r") as test_file:
         true_label = int(true_label)
 
         img = cv2.imread(absolute_fname)
+        if img is None:
+            continue
         pred_dist = predict_doc_dist(img)
         pred_label = np.argmax(pred_dist)
 
