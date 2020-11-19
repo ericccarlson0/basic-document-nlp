@@ -2,8 +2,6 @@ import time
 
 from nlp import preprocess
 
-# I prefer this to Lorem Ipsum.
-# Could use timeit instead of this, too...
 sentences = """
 Whereof one cannot speak, thereof one must be silent. \
 The limits of my language mean the limits of my world. \

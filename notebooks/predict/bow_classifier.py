@@ -9,15 +9,15 @@ from typing import List
 from nlp import preprocess
 from ocr import skew
 
-# %% Get JSON map of word/label combination counts.
+# %% Get JSON map of word-label counts.
 
-file = open("../resources/CDIP_OCR.json")
+file = open("../../resources/CDIP_OCR.json")
 word_label_counts = json.load(file)
-print(f"Total words in dict: {len(word_label_counts)}")
+print(f"Words in dict: {len(word_label_counts)}")
+
+# %% Define functions to get label distributions and prediction distributions.
 
 num_labels = 16
-
-# %% Define functions for getting label distributions and prediction distributions
 
 def get_label_dist(w: str) -> List:
     dist = [0] * num_labels
@@ -33,7 +33,6 @@ def get_label_dist(w: str) -> List:
 
     return dist
 
-# TODO: just for fun.
 document_word_counts = []
 zero_word_counts = 0
 
@@ -72,7 +71,7 @@ max_count = 512
 total_count = 0
 correct_count = 0
 
-with open(test_dir, "r") as test_file:
+with open(test_dir, 'r') as test_file:
     for line in test_file:
         if total_count % 32 == 0:
             print(f"{total_count}... ")
@@ -98,12 +97,12 @@ with open(test_dir, "r") as test_file:
 
         total_count += 1
 
-print(f"\nAccuracy: {correct_count / total_count}\n")
+print(f"Accuracy: {correct_count / total_count}\n")
 
 zeros = document_word_counts.count(0)
-print(f"Zeros: {zeros / total_count}")
+print(f"Zeros: {zeros / total_count}\n")
 
-# %% Plot document word counts (just for fun).
+# %% Plot document word counts.
 
 plt.hist(document_word_counts, bins=32, color='k')
 plt.show()

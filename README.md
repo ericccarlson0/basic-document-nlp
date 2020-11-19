@@ -1,8 +1,10 @@
 # Basic Document NLP
 
-The purpose of this purpose is to benchmark basic NLP techniques when it comes to the task of distinguishing document 
-types. In many cases, these documents will have been generated through OCR, in which case extra work would need to be 
-done to correct OCR-specific errors.
+The purpose of this project is to benchmark basic NLP techniques when it comes to the task of document classification.
+In many cases, these documents will have been generated through OCR, in which case extra work would need to be done to 
+correct OCR-specific errors.
+
+**NOTE**: This project is just getting started.
 
 ## Possible Basic Methods
 
@@ -10,7 +12,11 @@ done to correct OCR-specific errors.
 
 Performing experiments...
 
-* **Part of Speech, Chunking, Chinking**
+* **Part of Speech, Chunking**
+
+Performing experiments...
+
+* **TF-IDF**
 
 Performing experiments...
 
@@ -18,6 +24,3 @@ Performing experiments...
 
 Not sure where Named Entity Recognition would be particularly useful.
 
-* **TF-IDF**
-
-Performing experiments...

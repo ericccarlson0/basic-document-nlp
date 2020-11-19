@@ -2,20 +2,21 @@ import re
 import nltk
 
 from typing import List
-from sklearn.feature_extraction.text import CountVectorizer
-from nltk.corpus import wordnet
 
-# see https://arxiv.org/pdf/1204.0191.pdf for inspiration on correcting OCR errors.
+# This doc is probably one of the most disorganized here. The decision must be made as to whether or not
+# I want to do pre-processing myself, in order to use tools such as sklearn, or to leave it to tools such
+# as spaCy.
 
-alphanumeric_re = re.compile('[\W_]+')
+# see https://arxiv.org/pdf/1204.0191.pdf for ideas on correcting OCR errors.
+
+alpha_regex = re.compile('[\W_]+')
 redundant_pos = ['CC', 'CD', 'DT', 'EX', 'IN', 'LS', 'MD', 'PDT', 'POS', 'RP', 'TO']
 # excluded 'PRP (personal pronouns), PRP$ (possessive pronouns), WDT, WP, WRB (wh-determiner, pronoun, adverb)
 np_grammar = r"NP: {<DT>?<JJ>*<NN>}"
 vp_grammar = r"VP: {<NP><V><RB|RBR|RBS>}"
 
-
-# It is generally a good practice to use third-party modules -- but the 'basic' mode here
-# performs 10-100 times faster than the 'nltk' mode.
+# It is generally a good practice to use third-party modules, but the 'basic' mode here
+# performs 10-100 times faster than the 'nltk' mode...
 def tokenize_str(sentences: str, mode: str = 'nltk'):
     if mode == 'basic':
         tokens = [to_lowercase(word) for word in sentences.split()]
@@ -27,10 +28,10 @@ def tokenize_str(sentences: str, mode: str = 'nltk'):
     return tokens
 
 def to_alphanumeric(word: str):
-    return alphanumeric_re.sub('', word)
+    return alpha_regex.sub('', word)
 
 def to_lowercase(word: str):
-    return alphanumeric_re.sub('', word).lower()
+    return alpha_regex.sub('', word).lower()
 
 def should_filter_pos(word: str):
     tag = nltk.pos_tag([word])
@@ -60,18 +61,11 @@ def parse_v_phrase(tree):
     # TODO: more processing?
     return parsed
 
-# TODO: rename.
-# We can generate hypernymns, hyponyms, synonyms, and antonyms from the synset.
-# We can use #wup_similarity.
+# TODO: implement
 def generate_wordnet(word: str):
     pass
 
-# TODO: would we want to bass this CountVectorizer in?
-def generate_bow(sentences: List):
-    cv = CountVectorizer()
-    bag = cv.fit_transform(sentences).toarray()
+# TODO: implement
+def generate_bow(text: str):
+    pass
 
-    return bag
-
-# stemming -> differentiating between versions of the same word
-# chunking -> phrases <- words (with PoS)
