@@ -1,4 +1,6 @@
-#%% Create embedding dict.
+# %% Create embedding dict.
+
+# TODO: remove stop-words and non-words
 
 # 1) Initialize a matrix with N rows and M columns, where N is the number of labels and M is the number of
 #   word embedding dimensions.
@@ -18,7 +20,7 @@ print("Creating embedding dict...")
 embedding_dict = embeddings.create_embedding_dict()
 print("Done.")
 
-#%% Create label-embedding associations.
+# %% Create label-embedding associations.
 
 import csv
 import spacy
@@ -29,20 +31,29 @@ nlp = spacy.load('en_core_web_sm')
 
 n_labels = 16
 n_dims = 300
-max_doc_count = 1024
+total_n_docs = 4096
+doc_count = 0
 
-predictor_matrix = np.zeros((max_doc_count, n_dims))
-response_matrix = np.zeros((max_doc_count, n_labels))
+predictor_matrix = np.zeros((total_n_docs, n_dims))
+response_matrix = np.zeros((total_n_docs, n_labels))
 
 embedding_matrix = np.zeros((n_labels, n_dims))
 label_counts = [0] * n_labels
 
-doc_count = 0
+# TODO: move?
+def is_viable(token_):
+    if token_.is_stop:
+        return False
+    elif '_' in token_.text:
+        return False
+    else:
+        return token_.text in embedding_dict
+
+
 with open(csv_dir, 'r') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',', quotechar='*')
 
     for row in csv_reader:
-        print(row[0])
         label = int(row[0])
         doc = nlp(row[1])
 
@@ -50,9 +61,10 @@ with open(csv_dir, 'r') as csv_file:
         predictor = np.zeros(n_dims)
         word_count = 0
         for token in doc:
-            if token.text in embedding_dict:
+            if is_viable(token):
                 predictor += embedding_dict[token.text]
-            word_count += 1
+                word_count += 1
+
         predictor /= word_count
 
         # Create the response, which is just a one-hot encoding of the label.
@@ -67,24 +79,25 @@ with open(csv_dir, 'r') as csv_file:
 
         label_counts[label] += 1
 
-        print(f"Added {predictor[0]:.4f}, {predictor[1]:.4f}, {predictor[2]:.4f}..."
-              f" to matrix at {label}.")
+        # print(f"{label} -> {predictor[0]:.4f}, {predictor[1]:.4f}, {predictor[2]:.4f}...")
 
         doc_count += 1
-        if doc_count >= max_doc_count:
+        if doc_count >= total_n_docs:
             break
+        elif doc_count % (2 ** 8) == 0:
+            print(f"{doc_count}...")
 
 for i in range(n_labels):
     embedding_matrix[i] /= label_counts[i]
 
-#%% Dump matrices into the appropriate folder.
+# %% Dump matrices into the appropriate folder.
 
 import os
 
 resource_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove"
-glove_fname = os.path.join(resource_dir, "embeddings.npy")
-predictor_fname = os.path.join(resource_dir, "predictors.npy")
-response_fname = os.path.join(resource_dir, "responses.npy")
+glove_fname = os.path.join(resource_dir, "avg-embedding-matrix.npy")
+predictor_fname = os.path.join(resource_dir, "predictor-matrix.npy")
+response_fname = os.path.join(resource_dir, "response-matrix.npy")
 
 np.save(glove_fname, embedding_matrix)
 np.save(predictor_fname, predictor_matrix)

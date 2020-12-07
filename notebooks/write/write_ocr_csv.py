@@ -23,7 +23,7 @@ parser.add_argument("-l", "--labels",
                     default="16",
                     help="The number of distinct labels assigned to the images.")
 parser.add_argument("--count",
-                    default="1024",
+                    default="4096",
                     help="The maximum number of images to be translated and written to the csv.")
 
 args = vars(parser.parse_args())
