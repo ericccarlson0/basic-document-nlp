@@ -1,4 +1,4 @@
-# %% Create embedding dict.
+#%% Create embedding dict.
 
 # TODO: remove stop-words and non-words
 
@@ -20,7 +20,7 @@ print("Creating embedding dict...")
 embedding_dict = embeddings.create_embedding_dict()
 print("Done.")
 
-# %% Create label-embedding associations.
+#%% Create label-embedding associations.
 
 import csv
 import spacy
@@ -59,38 +59,92 @@ with open(csv_dir, 'r') as csv_file:
 
         # Create the predictor, which is an average of all word embeddings.
         predictor = np.zeros(n_dims)
+
         word_count = 0
         for token in doc:
             if is_viable(token):
                 predictor += embedding_dict[token.text]
                 word_count += 1
 
-        predictor /= word_count
-
-        # Create the response, which is just a one-hot encoding of the label.
-        response = [0] * n_labels
-        response[label] = 1
+        if word_count != 0:
+            predictor /= word_count
 
         embedding_matrix[label] += predictor
         # Assign the predictor to the correct row with numpy addition.
         predictor_matrix[doc_count] += predictor
         # Assign the response to the correct row with numpy addition.
+        response = np.zeros(n_labels)
+        response[label] = 1
         response_matrix[doc_count] += response
 
         label_counts[label] += 1
-
-        # print(f"{label} -> {predictor[0]:.4f}, {predictor[1]:.4f}, {predictor[2]:.4f}...")
-
         doc_count += 1
+
         if doc_count >= total_n_docs:
             break
         elif doc_count % (2 ** 8) == 0:
             print(f"{doc_count}...")
+            print(f"{predictor[0]: .3f}, {predictor[1]: .3f}, {predictor[2]: .3f}, ...")
 
 for i in range(n_labels):
     embedding_matrix[i] /= label_counts[i]
 
-# %% Dump matrices into the appropriate folder.
+#%% Visualize some predictors.
+
+import matplotlib.pyplot as plt
+import sys
+
+from sklearn.manifold import TSNE
+
+sample_n = 1024
+
+X = predictor_matrix[:sample_n, :]
+Y = np.argmax(
+    response_matrix[:sample_n, :],
+    axis=1
+)
+
+tsne = TSNE(n_components=2, random_state=53)
+X = tsne.fit_transform(X)
+
+def scatter_conditionally(label_n: int, color: str = 'k', max_count: int = sys.maxsize):
+    count = 0
+    d1 = []
+    d2 = []
+
+    for i in range(X.shape[0]):
+        if label_n == Y[i]:
+            d1.append(X[i, 0])
+            d2.append(X[i, 1])
+
+            count += 1
+            if count >= max_count:
+                break
+
+    return plt.scatter(d1, d2, color=color)
+
+label_color_pairs = (
+    (0, 'k'), (1, 'r'), (2, 'm'), (3, 'b'), (4, 'c'), (5, 'g'), (6, 'y')
+)
+
+scatterplots = []
+for l, c in label_color_pairs:
+    scatterplots.append(
+        scatter_conditionally(label_n=l, color=c, max_count=96)
+    )
+
+plt.legend(scatterplots,
+           ('0', '1', '2', '3', '4', '5', '6'),
+           scatterpoints=1,
+           loc='upper right')
+
+# plt.scatter(X[:, 0], X[:, 1], color='k')
+# for label, d1, d2 in zip(Y, X[:, 0], X[:, 1]):
+#     plt.annotate(str(label), xy=(d1, d2), xytext=(0, 0), textcoords="offset points")
+
+plt.show()
+
+#%% Dump matrices into the appropriate folder.
 
 import os
 
