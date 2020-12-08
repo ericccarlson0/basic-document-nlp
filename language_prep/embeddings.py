@@ -48,11 +48,11 @@ def show_tsne(embedding_dict: Dict, max_count: int = 128):
     words = words[:max_count]
     vectors = [embedding_dict[word] for word in words]
 
-    Y = tsne.fit_transform(vectors)
+    X = tsne.fit_transform(vectors)
 
-    plt.scatter(Y[:, 0], Y[:, 1])
-    for word, x, y in zip(words, Y[:, 0], Y[:, 1]):
-        plt.annotate(word, xy=(x, y), xytext=(0, 0), textcoords="offset points")
+    plt.scatter(X[:, 0], X[:, 1])
+    for word, d1, d2 in zip(words, X[:, 0], X[:, 1]):
+        plt.annotate(word, xy=(d1, d2), xytext=(0, 0), textcoords="offset points")
 
     plt.show()
 
