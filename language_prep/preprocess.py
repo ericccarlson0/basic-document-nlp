@@ -1,6 +1,5 @@
 import re
 import nltk
-import spacy
 
 # This doc is probably one of the most disorganized here. The decision must be made as to whether or not
 # I want to do pre-processing myself, in order to use tools such as sklearn, or to leave it to tools such
@@ -8,8 +7,9 @@ import spacy
 
 # see https://arxiv.org/pdf/1204.0191.pdf for ideas on correcting OCR errors.
 
-alpha_regex = re.compile('[\W_]+')
+non_alpha_regex = re.compile('[\W_]+')
 non_ws_regex = re.compile('[\S]+')
+special_regex = re.compile('[^\w\d\s]+')
 
 redundant_pos = ['CC', 'CD', 'DT', 'EX', 'IN', 'LS', 'MD', 'PDT', 'POS', 'RP', 'TO']
 # excluded 'PRP (personal pronouns), PRP$ (possessive pronouns), WDT, WP, WRB (wh-determiner, pronoun, adverb)
@@ -40,20 +40,41 @@ def tokenize_str(sentences: str, mode: str = 'nltk'):
     return tokens
 
 def to_alpha(word: str):
-    return alpha_regex.sub("", word)
+    return non_alpha_regex.sub("", word)
 
 def to_alpha_lower(word: str):
-    return alpha_regex.sub("", word).lower()
-
+    return non_alpha_regex.sub("", word).lower()
 
 def is_word(word: str):
     if len(words) == 0:
         load_glove_words()
 
+    # TODO: What to do with abbreviations, numbers, currency signs...?
+    if len(special_regex.findall(word)) != 0:
+        return False
+
     return word in words
 
+def token_to_str(token):
+    if token.is_space:
+        return None
+
+    word = token.text.lower()
+    if not is_word(word.strip()):
+        return None
+    else:
+        return word
+
+def is_viable_token(token_, dict_):
+    if token_.is_stop:
+        return False
+    elif '_' in token_.text:
+        return False
+    else:
+        return token_.text in dict_
+
 # TODO: How to deal with cases such as proper nouns?
-def to_cleaned_str(doc):
+def doc_to_str(doc):
     result = []
     for token in doc:
         if token.is_space:
@@ -70,7 +91,6 @@ def to_cleaned_str(doc):
 
     return "".join(result)
 
-# Uses NLTK.
 # TODO: unfinished
 def is_stopword(word: str):
     tag = nltk.pos_tag([word])
