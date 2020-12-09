@@ -15,6 +15,7 @@
 # 5) Write the association matrix to a file where it can be accessed later.
 
 from language_prep import embeddings
+from language_prep.preprocess import is_viable_token
 
 print("Creating embedding dict...")
 embedding_dict = embeddings.create_embedding_dict()
@@ -40,16 +41,6 @@ response_matrix = np.zeros((total_n_docs, n_labels))
 embedding_matrix = np.zeros((n_labels, n_dims))
 label_counts = [0] * n_labels
 
-# TODO: move?
-def is_viable(token_):
-    if token_.is_stop:
-        return False
-    elif '_' in token_.text:
-        return False
-    else:
-        return token_.text in embedding_dict
-
-
 with open(csv_dir, 'r') as csv_file:
     csv_reader = csv.reader(csv_file, delimiter=',', quotechar='*')
 
@@ -62,7 +53,7 @@ with open(csv_dir, 'r') as csv_file:
 
         word_count = 0
         for token in doc:
-            if is_viable(token):
+            if is_viable_token(token, embedding_dict):
                 predictor += embedding_dict[token.text]
                 word_count += 1
 

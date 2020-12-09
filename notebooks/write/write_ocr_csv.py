@@ -75,7 +75,7 @@ with open(csv_dir, 'w') as csv_file:
                     real_word_count += 1
                 word_count += 1
 
-            clean_str = preprocess.to_cleaned_str(ocr_doc)
+            clean_str = preprocess.doc_to_str(ocr_doc)
             writer.writerow([label, clean_str])
 
             # print(clean_str if len(clean_str) < 80

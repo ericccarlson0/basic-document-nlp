@@ -37,10 +37,7 @@ with open(csv_dir, 'r') as csv_file:
 
 import json
 
-json_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/CDIP_wl_counts.json"
-json_obj = json.dumps(wl_counts, indent=4)
+json_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/CDIP-word-label-counts.json"
 
 with open(json_dir, 'w') as json_file:
-    json_file.write(json_obj)
-
-print(f"Wrote {len(json_obj)} characters to {json_dir}.")
+    json.dump(wl_counts, json_file, indent=4)
