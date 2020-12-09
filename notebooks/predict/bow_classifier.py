@@ -4,7 +4,7 @@ import json
 import cv2
 
 word_label_counts = json.load(open(
-    "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/CDIP_wl_counts.json"))
+    "/resources/CDIP-word-label-counts.json"))
 print(f"# words: {len(word_label_counts)}")
 
 #%% Define functions to retrieve label distributions and prediction distributions.

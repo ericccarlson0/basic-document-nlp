@@ -8,12 +8,6 @@
 import numpy as np
 import os
 
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
-from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import PolynomialFeatures
-from time import time
-
 resources_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove"
 predictor_dir = os.path.join(resources_dir, "predictor-matrix.npy")
 response_dir = os.path.join(resources_dir, "response-matrix.npy")
@@ -23,8 +17,7 @@ Y = np.load(response_dir)
 
 print("Is there NaN?", np.any(np.isnan(X)))
 print("Is there infinite?", not np.all(np.isfinite(X)))
-# for i in range(X.shape[0]):
-#     print(not np.any(np.isnan(X[i])), np.all(np.isfinite(X[i])))
+
 X[np.isinf(X)] = 0
 X[np.isnan(X)] = 0
 
@@ -49,9 +42,20 @@ print(f"Y test, class: {Y_test_class.shape}\n")
 
 #%% Create and train regressors, classifiers.
 
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LinearRegression, Ridge, Lasso, ElasticNet
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import PolynomialFeatures
+from time import time
+
 regression_kwargs = {
     'normalize': True,
     'copy_X': True,
+}
+forest_kwargs = {
+    'criterion': 'entropy',
+    'min_samples_split': 2
 }
 
 standard_regression = LinearRegression(**regression_kwargs)
@@ -61,8 +65,9 @@ interaction_regression = Pipeline([
 ])
 # TODO: We could use the classifiers instead...
 ridge_regression = Ridge(solver='auto', **regression_kwargs)
-lasso_regression = Lasso(**regression_kwargs)
+lasso_regression = Lasso(max_iter=2**15, **regression_kwargs)
 elastic_regression = ElasticNet(
+    max_iter=2**15,
     alpha=1.0, l1_ratio=0.5,
     **regression_kwargs
 )
@@ -70,17 +75,23 @@ elastic_regression = ElasticNet(
 
 lda = LinearDiscriminantAnalysis(solver='eigen', shrinkage='auto')
 qda = QuadraticDiscriminantAnalysis()
+random_forest_def = RandomForestClassifier()
+random_forest_256 = RandomForestClassifier(n_estimators=2**8, **forest_kwargs)
+random_forest_512 = RandomForestClassifier(n_estimators=2**9, **forest_kwargs)
 
 regressors = (
     ('Standard Linear Regression', standard_regression),
-    ('Linear Regression w/ Interactions', interaction_regression),
+    # ('Linear Regression w/ Interactions', interaction_regression),
     ('Ridge (L2) Regression', ridge_regression),
     ('LASSO (L1) Regression', lasso_regression),
     ('ElasticNet Regression', elastic_regression)
 )
 classifiers = (
     ('Linear Discriminant Analysis', lda),
-    ('Quadratic Discriminant Analysis', qda)
+    ('Quadratic Discriminant Analysis', qda),
+    ('Random Forest (Default)', random_forest_def),
+    ('Random Forest 256', random_forest_256),
+    ('Random Forest 512', random_forest_512)
 )
 
 for name, regressor in regressors:
@@ -109,39 +120,36 @@ def zero_if_huge(n: int):
     else:
         return n
 
-def assess_predictions(X_set: np.ndarray, Y_set: np.ndarray, type_: str, pred_n: int):
+def assess_predictions(X_set: np.ndarray, Y_set: np.ndarray, type_: str, pred_n: int = 4):
     print("-" * 80)
     print(f"Results on {type_} set: ")
 
     for name, regressor in regressors:
         pred = regressor.predict(X_set)
 
-        for i in range(pred_n):
-            label = np.argmax(Y_set[i])
-            next_ = rotate(int(label), 16)
-
-            print(f"{zero_if_huge(pred[i][label]): .3f} | "
-                  f"{zero_if_huge(pred[i][next_]): .3f} <- {name}")
+        # for i in range(pred_n):
+        #     label = np.argmax(Y_set[i])
+        #     next_ = rotate(int(label), 16)
+        #
+        #     print(f"{zero_if_huge(pred[i][label]): .3f} | "
+        #           f"{zero_if_huge(pred[i][next_]): .3f} <- {name}")
 
         accuracy = accuracy_score(
             np.argmax(Y_set, axis=1),
             np.argmax(pred, axis=1))
-        print(f"Accuracy: {100 * accuracy: .3f}")
+        print(f"{name}: {100 * accuracy: .3f}")
 
     for name, classifier in classifiers:
         pred_classes = classifier.predict(X_set)
 
-        for i in range(pred_n):
-            true_class = np.argmax(Y_set[i])
-            print(f"{pred_classes[i]} | "
-                  f"{true_class} <- {name}")
+        # for i in range(pred_n):
+        #     true_class = np.argmax(Y_set[i])
+        #     print(f"{pred_classes[i]} | "
+        #           f"{true_class} <- {name}")
 
         accuracy = accuracy_score(np.argmax(Y_set, axis=1), pred_classes)
-        print(f"Accuracy: {100 * accuracy: .3f}")
+        print(f"{name}: {100 * accuracy: .3f}")
 
 
-assess_predictions(X_train, Y_train, "TRAIN", 8)
-assess_predictions(X_test, Y_test, "TEST", 8)
-
-# print(regressor.coef_.shape)
-# print(regressor.coef_[0])
+assess_predictions(X_train, Y_train, "TRAIN")
+assess_predictions(X_test, Y_test, "TEST")
