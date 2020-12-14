@@ -16,8 +16,8 @@ from sklearn.manifold import TSNE
 project_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp"
 glove_dir = os.path.join(project_dir, "resources", "glove")
 
-def write_glove_embedding(ocr_csv_dir: str, embedding_dir: str, n_labels: int, n_dims: int, max_doc_count: int,
-                          vis: bool = False):
+def write_glove_embedding(ocr_csv_dir: str, embedding_dir: str, save_to_dir: str, n_labels: int, n_dims: int,
+                          max_doc_count: int, vis: bool = False):
     print("Creating embedding dict...")
     embedding_dict = embeddings.create_embedding_dict(dir_=embedding_dir)
     print("Done.")
@@ -74,9 +74,9 @@ def write_glove_embedding(ocr_csv_dir: str, embedding_dir: str, n_labels: int, n
     if vis:
         scatter_predictors(X=X, Y=Y)
 
-    np.save(os.path.join(glove_dir, "avg-embedding-matrix.npy"), avg_embedding_matrix)
-    np.save(os.path.join(glove_dir, "predictor-matrix.npy"), predictor_matrix)
-    np.save(os.path.join(glove_dir, "response-matrix.npy"), response_matrix)
+    np.save(os.path.join(save_to_dir, "avg-embedding-matrix.npy"), avg_embedding_matrix)
+    np.save(os.path.join(save_to_dir, "predictor-matrix.npy"), predictor_matrix)
+    np.save(os.path.join(save_to_dir, "response-matrix.npy"), response_matrix)
 
 def scatter_predictors(X: np.ndarray, Y: np.ndarray):
     tsne = TSNE(n_components=2, random_state=53)
@@ -117,12 +117,16 @@ def scatter_on_label(X: np.ndarray, Y: np.ndarray, label: int, color: str = 'k',
     return plt.scatter(d1, d2, color=color)
 
 if __name__ == '__main__':
-    # For instance, ...
-    write_glove_embedding(
-        ocr_csv_dir="/Users/ericcarlson/Desktop/Datasets/csv/CDIP_OCR.csv",
-        embedding_dir=os.path.join(glove_dir, "standard", "glove.6B.300d.txt"),
-        n_labels=16,
-        n_dims=300,
-        max_doc_count=4096,
-        vis=True
-    )
+    for embedding_dir, subfolder, n_dims in (
+        (os.path.join(glove_dir, "common-crawl", "glove.42B.300d.txt"), "common-crawl", 300),
+        (os.path.join(glove_dir, "standard", "glove.6B.300d.txt"), "standard", 300),
+        (os.path.join(glove_dir, "twitter", "glove.twitter.27B.200d.txt"), "twitter", 200)
+    ):
+        write_glove_embedding(
+            ocr_csv_dir="/Users/ericcarlson/Desktop/Datasets/csv/CDIP_OCR.csv",
+            embedding_dir=embedding_dir,
+            save_to_dir=os.path.join(glove_dir, subfolder),
+            n_labels=16,
+            n_dims=n_dims,
+            max_doc_count=4096,
+        )

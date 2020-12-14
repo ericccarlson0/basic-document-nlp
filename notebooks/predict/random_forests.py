@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import os
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -76,8 +77,13 @@ def compare_ccp_alphas(X, y, ccp_alphas, **kwargs):
 
 
 if __name__ == '__main__':
-    X = np.load("/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove/predictor-matrix.npy")
-    y = np.load("/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove/response-matrix.npy")
+    glove_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove"
+
+    X = np.load(os.path.join(glove_dir, "standard", "predictor-matrix.npy"))
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+
+    y = np.load(os.path.join(glove_dir, "standard", "response-matrix.npy"))
     y = np.argmax(y, axis=1)
 
     ccp_alphas = np.arange(1, 12) * 1e-3
