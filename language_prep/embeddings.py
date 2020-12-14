@@ -11,9 +11,11 @@ from sklearn.manifold import TSNE
 
 num_regex = re.compile('[\d-]+')
 project_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp"
-glove_commons_dir = os.path.join(project_dir, "resources", "glove.42B.300d.txt")
-glove_twitter_dir = os.path.join(project_dir, "resources", "glove.twitter.27B.txt")
-glove_standard_dir = os.path.join(project_dir, "resources", "glove.6B.txt")
+glove_dir = os.path.join(project_dir, "resources", "glove")
+
+glove_crawl_dir = os.path.join(glove_dir, "common-crawl", "glove.42B.300d.txt")
+glove_twitter_dir = os.path.join(glove_dir, "twitter", "glove.27B.200d.txt")
+glove_standard_dir = os.path.join(glove_dir, "standard", "glove.6B.300d.txt")
 
 def create_embedding_dict(dir_: str = "") -> Dict:
     embedding_dict = {}
@@ -36,8 +38,8 @@ def create_embedding_dict(dir_: str = "") -> Dict:
 
     return embedding_dict
 
-def create_glove_commons_dict():
-    return create_embedding_dict(dir_=glove_commons_dir)
+def create_glove_crawl_dict():
+    return create_embedding_dict(dir_=glove_crawl_dir)
 
 def create_glove_twitter_dict():
     return create_embedding_dict(dir_=glove_twitter_dir)
