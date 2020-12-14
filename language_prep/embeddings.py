@@ -1,52 +1,68 @@
-import random
+import os
 import re
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+from notebooks.util.logging import list_to_string
 from scipy import spatial
 from time import time
 from typing import Dict
 from sklearn.manifold import TSNE
 
 num_regex = re.compile('[\d-]+')
-glove_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove.42B.300d.txt"
+project_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp"
+glove_commons_dir = os.path.join(project_dir, "resources", "glove.42B.300d.txt")
+glove_twitter_dir = os.path.join(project_dir, "resources", "glove.twitter.27B.txt")
+glove_standard_dir = os.path.join(project_dir, "resources", "glove.6B.txt")
 
-def create_embedding_dict(max_count: int = sys.maxsize) -> Dict:
+def create_embedding_dict(dir_: str = "") -> Dict:
     embedding_dict = {}
     count = 0
 
-    with open(glove_dir, 'r', encoding="utf-8") as embedding_file:
+    with open(dir_, 'r', encoding='utf-8') as embedding_file:
         for line in embedding_file:
             vals = line.split()
             word = vals[0]
 
             dex = 1
             while num_regex.match(vals[dex]) is None:
-                print(vals[dex])
+                # print(vals[dex])
                 dex += 1
 
-            # TODO: correct datatype?
-            vector = np.asarray(vals[1:], "float32")
+            vector = np.asarray(vals[1:], "float64")
             embedding_dict[word] = vector
 
             count += 1
-            if count >= max_count:
-                break
 
     return embedding_dict
+
+def create_glove_commons_dict():
+    return create_embedding_dict(dir_=glove_commons_dir)
+
+def create_glove_twitter_dict():
+    return create_embedding_dict(dir_=glove_twitter_dir)
+
+def create_glove_standard_dict():
+    return create_embedding_dict(dir_=glove_standard_dir)
+
 
 def get_nearest_embeddings(embedding_dict: Dict, embedding):
     return sorted(embedding_dict.keys(),
                   key=lambda word: spatial.distance.euclidean(embedding_dict[word], embedding))
 
 def show_tsne(embedding_dict: Dict, max_count: int = 128):
-    tsne = TSNE(n_components=2, random_state=47)
+    tsne = TSNE(n_components=2, random_state=53)
 
-    words = list(embedding_dict.keys())
-    random.shuffle(words)
-    words = words[:max_count]
-    vectors = [embedding_dict[word] for word in words]
+    count = 0
+    words = []
+    vectors = []
+    for word in embedding_dict.keys():
+        words.append(word)
+        vectors.append(embedding_dict[word])
+
+        if count >= max_count:
+            break
+        count += 1
 
     X = tsne.fit_transform(vectors)
 
@@ -56,14 +72,13 @@ def show_tsne(embedding_dict: Dict, max_count: int = 128):
 
     plt.show()
 
-
-if __name__ == '__main__':
+def test():
     t0 = time()
-    e_dict = create_embedding_dict()
-    print(f"{time() - t0} secs")
+    e_dict = create_glove_twitter_dict()
+    print(f"{time() - t0: .4f} secs")
 
-    nearest_ball = get_nearest_embeddings(e_dict, e_dict['ball'])[1:6]
-    for i in range(5):
-        print(f"{i}: {nearest_ball[i]}")
+    word = "ball"
+    nearest = get_nearest_embeddings(e_dict, e_dict[word])[1:6]
+    print(list_to_string(nearest))
 
     show_tsne(e_dict)
