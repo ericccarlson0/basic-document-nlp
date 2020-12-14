@@ -8,6 +8,9 @@
 import numpy as np
 import os
 
+from sklearn.preprocessing import StandardScaler
+from notebooks.util.logging import numerical_list_to_string
+
 resources_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove"
 predictor_dir = os.path.join(resources_dir, "predictor-matrix.npy")
 response_dir = os.path.join(resources_dir, "response-matrix.npy")
@@ -15,8 +18,15 @@ response_dir = os.path.join(resources_dir, "response-matrix.npy")
 X = np.load(predictor_dir)
 Y = np.load(response_dir)
 
-print("Is there NaN?", np.any(np.isnan(X)))
-print("Is there infinite?", not np.all(np.isfinite(X)))
+# TODO: It probably is not the best practice to do this on the training and test data together, but I
+#   don't want to add any more unnecessary lines...
+X_scaler = StandardScaler()
+X = X_scaler.fit_transform(X)
+print("mean: ", numerical_list_to_string(X_scaler.mean_))
+print("var: ", numerical_list_to_string(X_scaler.var_))
+
+# print("Is there NaN? ->", np.any(np.isnan(X)))
+# print("Is there infinite? ->", not np.all(np.isfinite(X)))
 
 X[np.isinf(X)] = 0
 X[np.isnan(X)] = 0
@@ -34,11 +44,11 @@ Y_test = Y[-test_size:, :]
 Y_test_class = np.argmax(Y_test, axis=1)
 
 print(f"X train: {X_train.shape}")
-print(f"Y train: {Y_train.shape}")
-print(f"Y train, class: {Y_train_class.shape}\n")
+# print(f"Y train: {Y_train.shape}")
+# print(f"Y train, class: {Y_train_class.shape}\n")
 print(f"X test: {X_test.shape}")
-print(f"Y test: {Y_test.shape}")
-print(f"Y test, class: {Y_test_class.shape}\n")
+# print(f"Y test: {Y_test.shape}")
+# print(f"Y test, class: {Y_test_class.shape}\n")
 
 #%% Create and train regressors, classifiers.
 
@@ -54,8 +64,9 @@ regression_kwargs = {
     'copy_X': True,
 }
 forest_kwargs = {
-    'criterion': 'entropy',
-    'min_samples_split': 2
+    'criterion': 'entropy', # default is 'gini'
+    # 'max_features': 0.5, # default is sqrt(features)
+    'ccp_alpha': .0035 # default is 0.0
 }
 
 standard_regression = LinearRegression(**regression_kwargs)
@@ -86,12 +97,15 @@ regressors = (
     ('LASSO (L1) Regression', lasso_regression),
     ('ElasticNet Regression', elastic_regression)
 )
-classifiers = (
-    ('Linear Discriminant Analysis', lda),
-    ('Quadratic Discriminant Analysis', qda),
+random_forests = (
     ('Random Forest (Default)', random_forest_def),
     ('Random Forest 256', random_forest_256),
     ('Random Forest 512', random_forest_512)
+)
+classifiers = (
+    ('Linear Discriminant Analysis', lda),
+    ('Quadratic Discriminant Analysis', qda),
+    *random_forests
 )
 
 for name, regressor in regressors:
@@ -150,6 +164,16 @@ def assess_predictions(X_set: np.ndarray, Y_set: np.ndarray, type_: str, pred_n:
         accuracy = accuracy_score(np.argmax(Y_set, axis=1), pred_classes)
         print(f"{name}: {100 * accuracy: .3f}")
 
-
 assess_predictions(X_train, Y_train, "TRAIN")
 assess_predictions(X_test, Y_test, "TEST")
+
+#%% Evaluate decision trees.
+
+print('-' * 80)
+
+for name, random_forest in random_forests:
+    trees = random_forest.estimators_
+    print(f"Decision tree sizes for {name}")
+    print(f"{trees[0].tree_.node_count}, "
+          f"{trees[1].tree_.node_count}, "
+          f"{trees[2].tree_.node_count}, ...")
