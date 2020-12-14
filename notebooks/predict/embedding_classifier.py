@@ -1,10 +1,5 @@
 #%% Generate matrices, remove NaN and infinite values.
 
-# Here, we perform a simple linear regression on the "average embedding" of each doc.
-# The end goal is to test various standard statistical methods on this average embedding in order to assess
-# the viability of the "average embedding" approach. That would mean more linear methods with various basis
-# expansions, LDA/QDA, ... which are all easy to test with sklearn.
-
 import numpy as np
 import os
 

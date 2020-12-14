@@ -26,7 +26,7 @@ Not sure where Named Entity Recognition would be particularly useful.
 
 * **Embeddings**
 
-The files embeddings.py (in language_prep), write_embedding.py (in notebooks/write), and embedding_classifier (in 
+The files embeddings.py (in language_prep), write_embedding.py (in notebooks/write), and embedding_classifier.py (in 
 notebooks/predict) are used to assess the use of "average embeddings" for words or bigrams. The process to produce 
 these embeddings is as follows:
 * Initialize a matrix with N rows and M columns, where N is the number of labels and M is the number of dimensions in 
@@ -41,3 +41,8 @@ for to produce the "average embedding".
 to produce rows that represent average embeddings for documents containing each label.
 * Write the N x M matrix, which has the average embedding for each label, and another matrix containing the average 
 embedding for each doc to somewhere it can be accessed easily.
+
+In **embedding_classifier**, we perform various classical statistical techniques on the average embedding data for each 
+document, to assess the overall viability of the "average embedding" approach. A comprehensive test would include a 
+handful of different embeddings to try out, a host of classical classification and regression techniques, and some 
+variation on these techniques in terms of training parameters, smoothing, basis expansion, etc.
