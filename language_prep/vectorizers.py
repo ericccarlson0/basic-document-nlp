@@ -1,7 +1,6 @@
-import nltk
-
 from sklearn.feature_extraction.text import CountVectorizer
 from nltk.stem.snowball import SnowballStemmer
+from nltk.stem import WordNetLemmatizer
 
 class SnowballStemCountVectorizer(CountVectorizer):
     def __init__(self):
@@ -10,4 +9,13 @@ class SnowballStemCountVectorizer(CountVectorizer):
 
     def build_analyzer(self):
         analyzer = super(SnowballStemCountVectorizer, self).build_analyzer()
-        return lambda doc: ([self.stemmer.stem(w) for w in analyzer(doc)])
+        return lambda doc: ([self.stemmer.stem(word) for word in analyzer(doc)])
+
+class LemmatizerCountVectorizer(CountVectorizer):
+    def __init__(self):
+        super(CountVectorizer, self).__init__()
+        self.lemmatizer = WordNetLemmatizer()
+
+    def build_analyzer(self):
+        analyzer = super(LemmatizerCountVectorizer, self).build_analyzer()
+        return lambda doc: ([self.lemmatizer.lemmatize(word) for word in analyzer(doc)])

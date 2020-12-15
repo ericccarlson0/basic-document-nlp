@@ -13,8 +13,6 @@ from time import time
 # TODO: convert PoS that are equivalent!
 #  (ex. 120 -> number, John -> name)
 
-# TODO: Allow one to either perform TF-IDF and vectorization here, or to load these.
-
 def load_predictors_from_text(ocr_csv_dir: str, max_docs: int):
     count_vectorizer = CountVectorizer(
         ngram_range=(1, 2),
@@ -57,12 +55,11 @@ def evaluate_on_boosted_trees(X_train, X_test, X_val, Y_train, Y_test, Y_val, n_
         # 'objective' : 'multiclassova"
         'num_class': n_classes,
         'boosting': 'gbdt',
-        # 'boosting': 'dart'
-        'num_leaves': 63
+        # 'boosting': 'dart',
+        'num_leaves': 2**10 - 1
     }
 
-    n_rounds = 16
-
+    n_rounds = 64
     t0 = time()
     print(f"Training Booster...")
 
@@ -72,11 +69,15 @@ def evaluate_on_boosted_trees(X_train, X_test, X_val, Y_train, Y_test, Y_val, n_
 
     val_pred = np.argmax(booster.predict(X_val), axis=1)
     test_pred = np.argmax(booster.predict(X_test), axis=1)
+    train_pred = np.argmax(booster.predict(X_train), axis=1)
+
     val_accuracy = accuracy_score(val_pred, Y_val)
     test_accuracy = accuracy_score(test_pred, Y_test)
+    train_accuracy = accuracy_score(train_pred, Y_train)
 
     print(f"{100 * val_accuracy: .4f} accuracy on validation set")
     print(f"{100 * test_accuracy: .4f} accuracy on test set")
+    print(f"{100 * train_accuracy: .4f} accuracy on train set")
 
 def evaluate_on_sgd(X_train, X_test, X_val, Y_train, Y_test, Y_val):
     sgd = SGDClassifier(
@@ -112,10 +113,10 @@ if __name__ == '__main__':
     X_train, X_not_train, Y_train, Y_not_train = train_test_split(loaded_X, loaded_Y, test_size=0.30)
     X_val, X_test, Y_val, Y_test = train_test_split(X_not_train, Y_not_train, test_size=0.50)
 
-    print('-' * 80)
-    for i in range(8):
-        print(f"X size: {loaded_X[i, :].getnnz()}, Y: {loaded_Y[i]}")
-    print('-' * 80)
+    # print('-' * 80)
+    # for i in range(8):
+    #     print(f"X size: {loaded_X[i, :].getnnz()}, Y: {loaded_Y[i]}")
+    # print('-' * 80)
 
     evaluate_on_boosted_trees(X_train, X_val, X_test, Y_train, Y_val, Y_test, n_classes=16)
     # evaluate_on_sgd(X_train, X_val, X_test, Y_train, Y_val, Y_test)
