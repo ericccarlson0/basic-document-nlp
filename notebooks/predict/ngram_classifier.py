@@ -58,7 +58,7 @@ def evaluate_on_boosted_trees(X_train, X_test, X_val, Y_train, Y_test, Y_val, n_
         'num_class': n_classes,
         'boosting': 'gbdt',
         # 'boosting': 'dart'
-        'num_leaves': 31
+        'num_leaves': 63
     }
 
     n_rounds = 16
@@ -75,8 +75,8 @@ def evaluate_on_boosted_trees(X_train, X_test, X_val, Y_train, Y_test, Y_val, n_
     val_accuracy = accuracy_score(val_pred, Y_val)
     test_accuracy = accuracy_score(test_pred, Y_test)
 
-    print(f"{100 * val_accuracy} accuracy on validation set")
-    print(f"{100 * test_accuracy} accuracy on test set")
+    print(f"{100 * val_accuracy: .4f} accuracy on validation set")
+    print(f"{100 * test_accuracy: .4f} accuracy on test set")
 
 def evaluate_on_sgd(X_train, X_test, X_val, Y_train, Y_test, Y_val):
     sgd = SGDClassifier(
@@ -94,7 +94,7 @@ def evaluate_on_sgd(X_train, X_test, X_val, Y_train, Y_test, Y_val):
     print(f"{dt: .4f} secs to train SGD")
 
     print(f"TRAIN score:\t{100 * sgd.score(X_train, Y_train): .4f}")
-    print(f"VAL score:\t{100 * sgd.score(X_val, Y_val)}")
+    print(f"VAL score:\t{100 * sgd.score(X_val, Y_val): .4f}")
     print(f"TEST score:\t{100 * sgd.score(X_test, Y_test): .4f}")
 
 if __name__ == '__main__':
