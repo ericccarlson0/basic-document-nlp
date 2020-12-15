@@ -4,22 +4,28 @@ import numpy as np
 import os
 
 from notebooks.util.generators import generator_with_max
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from language_prep.vectorizers import LemmatizerCountVectorizer
+
+from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.pipeline import Pipeline
 from time import time
 
 # TODO: convert PoS that are equivalent!
 #  (ex. 120 -> number, John -> name)
 
 def load_predictors_from_text(ocr_csv_dir: str, max_docs: int):
-    count_vectorizer = CountVectorizer(
-        ngram_range=(1, 2),
-        min_df=1./(2 ** 11),
-        max_df=.75
-    )
-    tfidf_transformer = TfidfTransformer(norm='l2', smooth_idf=False)
+    feature_pipeline = Pipeline([
+        ('vectorizer', LemmatizerCountVectorizer(
+            ngram_range=(1, 2),
+            min_df=2,
+            max_df=.75)),
+        ('tfidf', TfidfTransformer(
+            norm='l2',
+            smooth_idf=False))
+    ])
 
     with open(ocr_csv_dir) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',', quotechar='*')
@@ -29,8 +35,7 @@ def load_predictors_from_text(ocr_csv_dir: str, max_docs: int):
             max_docs
         )
 
-        counts = count_vectorizer.fit_transform(docs)
-        X = tfidf_transformer.fit_transform(counts)
+        X = feature_pipeline.fit_transform(docs)
 
     return X
 
@@ -54,8 +59,9 @@ def evaluate_on_boosted_trees(X_train, X_test, X_val, Y_train, Y_test, Y_val, n_
         'objective': 'multiclass',
         # 'objective' : 'multiclassova"
         'num_class': n_classes,
-        'boosting': 'gbdt',
+        # 'boosting': 'gbdt',
         # 'boosting': 'dart',
+        'boosting': 'goss',
         'num_leaves': 2**10 - 1
     }
 
@@ -113,10 +119,10 @@ if __name__ == '__main__':
     X_train, X_not_train, Y_train, Y_not_train = train_test_split(loaded_X, loaded_Y, test_size=0.30)
     X_val, X_test, Y_val, Y_test = train_test_split(X_not_train, Y_not_train, test_size=0.50)
 
-    # print('-' * 80)
-    # for i in range(8):
-    #     print(f"X size: {loaded_X[i, :].getnnz()}, Y: {loaded_Y[i]}")
-    # print('-' * 80)
+    print('-' * 80)
+    for i in range(8):
+        print(f"X size: {loaded_X[i, :].getnnz()}, Y: {loaded_Y[i]}")
+    print('-' * 80)
 
     evaluate_on_boosted_trees(X_train, X_val, X_test, Y_train, Y_val, Y_test, n_classes=16)
     # evaluate_on_sgd(X_train, X_val, X_test, Y_train, Y_val, Y_test)
