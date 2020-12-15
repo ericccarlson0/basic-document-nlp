@@ -1,10 +1,13 @@
 #%% Retrieve the map containing counts of words associated with labels.
 
-import json
 import cv2
+import json
+import os
 
+resource_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources"
 word_label_counts = json.load(open(
-    "/resources/CDIP-word-label-counts.json"))
+    os.path.join(resource_dir, "CDIP-word-label-counts.json"))
+)
 print(f"# words: {len(word_label_counts)}")
 
 #%% Define functions to retrieve label distributions and prediction distributions.
