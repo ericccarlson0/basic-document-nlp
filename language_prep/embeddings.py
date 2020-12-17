@@ -17,24 +17,21 @@ glove_crawl_dir = os.path.join(glove_dir, "common-crawl", "glove.42B.300d.txt")
 glove_twitter_dir = os.path.join(glove_dir, "twitter", "glove.27B.200d.txt")
 glove_standard_dir = os.path.join(glove_dir, "standard", "glove.6B.300d.txt")
 
-def create_embedding_dict(dir_: str = "") -> Dict:
+def create_embedding_dict(dir_: str) -> Dict:
     embedding_dict = {}
-    count = 0
 
     with open(dir_, 'r', encoding='utf-8') as embedding_file:
         for line in embedding_file:
             vals = line.split()
             word = vals[0]
 
-            dex = 1
-            while num_regex.match(vals[dex]) is None:
-                # print(vals[dex])
-                dex += 1
+            # dex = 1
+            # while num_regex.match(vals[dex]) is None:
+            #     print(vals[dex])
+            #     dex += 1
 
             vector = np.asarray(vals[1:], "float64")
             embedding_dict[word] = vector
-
-            count += 1
 
     return embedding_dict
 
@@ -58,7 +55,7 @@ def show_tsne(embedding_dict: Dict, max_count: int = 128):
     count = 0
     words = []
     vectors = []
-    for word in embedding_dict.keys():
+    for word in embedding_dict:
         words.append(word)
         vectors.append(embedding_dict[word])
 
