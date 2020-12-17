@@ -1,5 +1,6 @@
-import re
+import os
 import nltk
+import re
 
 # This doc is probably one of the most disorganized here. The decision must be made as to whether or not
 # I want to do pre-processing myself, in order to use tools such as sklearn, or to leave it to tools such
@@ -16,10 +17,12 @@ redundant_pos = ['CC', 'CD', 'DT', 'EX', 'IN', 'LS', 'MD', 'PDT', 'POS', 'RP', '
 np_grammar = r"NP: {<DT>?<JJ>*<NN>}"
 vp_grammar = r"VP: {<NP><V><RB|RBR|RBS>}"
 
+project_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/"
+
 # Use words that are in the GloVe dataset.
 words = set()
 def load_glove_words():
-    glove_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove.42B.300d.txt"
+    glove_dir = os.path.join(project_dir, "resources", "glove", "standard", "glove.6B.50d.txt")
 
     print("In the process of loading all words used in GloVe embeddings...")
 
