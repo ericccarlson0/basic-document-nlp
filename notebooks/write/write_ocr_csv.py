@@ -1,8 +1,5 @@
 #%% Set up command-line args.
 
-# NOTE that the CSV created in this doc has to use quotechars that one can be near certain will not appear
-# within a document. This script uses the asterisk.
-
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -23,7 +20,7 @@ parser.add_argument("-l", "--labels",
                     default="16",
                     help="The number of distinct labels assigned to the images.")
 parser.add_argument("--count",
-                    default="4096",
+                    default="8192",
                     help="The maximum number of images to be translated and written to the csv.")
 
 args = vars(parser.parse_args())
@@ -47,7 +44,7 @@ import spacy
 
 from image_prep import deskew
 from language_prep import preprocess
-from notebooks.util.image_dataset import TxtImageDataset
+from notebooks.util.datasets import TxtImageDataset
 
 nlp = spacy.load('en_core_web_sm')
 

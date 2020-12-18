@@ -53,7 +53,7 @@ opts.print_confusion = True
 
 categories = None
 remove = ('headers', 'footers', 'quotes')
-random_state = 47
+random_state = 53
 
 print("Data coming in...")
 data_train = fetch_20newsgroups(subset='train', categories=categories,
@@ -146,14 +146,14 @@ def benchmark(classifier):
     print(f"{score: .3f} accuracy.")
 
     if hasattr(classifier, 'coef_'):
-        coef = classifier.coef_
-        print(f"Dimensionality: {coef.shape[1]}")
-        print(f"Density: {density(coef): .3f}")
+        coefficients = classifier.coef_
+        print(f"Dimensionality: {coefficients.shape[1]}")
+        print(f"Density: {density(coefficients): .3f}")
 
         if feature_names is not None and opts.print_top10:
             print("Top keywords, per class: ")
             for i, label in enumerate(target_names):
-                top10 = np.argsort(coef[i])[-10:]
+                top10 = np.argsort(coefficients[i])[-10:]
                 print(trim(
                     f"""{label}: {" ".join(feature_names[top10])}"""
                 ))
@@ -185,10 +185,10 @@ iterations = 128
 
 # NOTE: changed Ridge solver, sag -> sparse_cg
 for name, classifier in (
-    ("Ridge", RidgeClassifier(tol=1e-2, solver='sparse_cg')),
-    ("Perceptron", Perceptron(max_iter=iterations)),
-    ("K-Nearest", KNeighborsClassifier(n_neighbors=8)),
-    ("Random Forest", RandomForestClassifier())):
+        ("Ridge", RidgeClassifier(tol=1e-2, solver='sparse_cg')),
+        ("Perceptron", Perceptron(max_iter=iterations)),
+        ("K-Nearest", KNeighborsClassifier(n_neighbors=8)),
+        ("Random Forest", RandomForestClassifier())):
     print("-" * 80)
     print(name)
     results.append(benchmark(classifier))

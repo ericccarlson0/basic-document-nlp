@@ -15,7 +15,7 @@ def avg_depths(random_forest):
         depth_sum += tree.tree_.max_depth
         tree_count += 1
 
-        if tree_count >= 2**7:
+        if tree_count >= 2**10:
             break
 
     return depth_sum / tree_count
@@ -28,7 +28,7 @@ def avg_node_counts(random_forest):
         nodes_sum += tree.tree_.node_count
         tree_count += 1
 
-        if tree_count >= 2**7:
+        if tree_count >= 2**10:
             break
 
     return nodes_sum / tree_count
