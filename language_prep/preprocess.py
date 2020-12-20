@@ -2,31 +2,35 @@ import os
 import nltk
 import re
 
-# This doc is probably one of the most disorganized here. The decision must be made as to whether or not
-# I want to do pre-processing myself, in order to use tools such as sklearn, or to leave it to tools such
-# as spaCy.
+from configparser import RawConfigParser
+from os import path
 
 # see https://arxiv.org/pdf/1204.0191.pdf for ideas on correcting OCR errors.
 
 non_alpha_regex = re.compile('[\W_]+')
 non_ws_regex = re.compile('[\S]+')
 special_regex = re.compile('[^\w\d\s]+')
+num_regex = re.compile('[\d-]+')
 
 redundant_pos = ['CC', 'CD', 'DT', 'EX', 'IN', 'LS', 'MD', 'PDT', 'POS', 'RP', 'TO']
 # excluded 'PRP (personal pronouns), PRP$ (possessive pronouns), WDT, WP, WRB (wh-determiner, pronoun, adverb)
 np_grammar = r"NP: {<DT>?<JJ>*<NN>}"
 vp_grammar = r"VP: {<NP><V><RB|RBR|RBS>}"
 
-project_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/"
+properties_dir = path.normpath(path.join(os.getcwd(), "../resources/properties.ini"))
+config = RawConfigParser()
+config.read(properties_dir)
 
-# Use words that are in the GloVe dataset.
+glove_dir = config.get("Embeddings", "glove.directory")
+
+# This method uses words that are in the GloVe dataset as a dict.
 words = set()
 def load_glove_words():
-    glove_dir = os.path.join(project_dir, "resources", "glove", "standard", "glove.6B.50d.txt")
+    embedding_dir = path.join(glove_dir, "standard", "glove.6B.50d.txt")
 
     print("In the process of loading all words used in GloVe embeddings...")
 
-    with open(glove_dir) as glove_file:
+    with open(embedding_dir) as glove_file:
         for line in glove_file:
             words.add(line.split()[0])
 

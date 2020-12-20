@@ -2,8 +2,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
+from configparser import RawConfigParser
+from os import path
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from time import time
 
@@ -41,7 +43,7 @@ def compare_ccp_alphas(X, y, ccp_alphas, **kwargs):
         random_forest = RandomForestClassifier(ccp_alpha=alpha, **kwargs)
 
         t0 = time()
-        print(f"Training RF with ALPHA={alpha: .5f}...")
+        print(f"Training Random Forest with ALPHA={alpha: .5f}...")
         random_forest.fit(X_train, y_train)
         print(f"{time() - t0: .3f} secs.")
 
@@ -50,7 +52,7 @@ def compare_ccp_alphas(X, y, ccp_alphas, **kwargs):
     train_scores = []
     test_scores = []
     node_counts = []
-    # depth_counts = []
+    depth_counts = []
 
     for alpha in ccp_alphas:
         rf = decision_trees[alpha]
@@ -58,6 +60,7 @@ def compare_ccp_alphas(X, y, ccp_alphas, **kwargs):
         train_scores.append(rf.score(X_train, y_train))
         test_scores.append(rf.score(X_test, y_test))
         node_counts.append(avg_node_counts(rf))
+        depth_counts.append(avg_depths(rf))
 
     fig, ax = plt.subplots()
     ax.set_xlabel("ALPHA")
@@ -65,25 +68,33 @@ def compare_ccp_alphas(X, y, ccp_alphas, **kwargs):
     ax.plot(ccp_alphas, train_scores, color='k', label='train', drawstyle='steps-post')
     ax.plot(ccp_alphas, test_scores, color='m', label='test', drawstyle='steps-post')
     ax.legend()
-
     plt.show()
 
     fig, ax = plt.subplots()
     ax.set_xlabel("ALPHA")
-    ax.set_ylabel("Total nodes")
+    ax.set_ylabel("Total # Nodes.")
     ax.plot(ccp_alphas, node_counts, color='k', drawstyle='steps-post')
-
     plt.show()
 
+    fig, ax = plt.subplots()
+    ax.set_xlabel("ALPHA")
+    ax.set_ylabel("Tree Depth")
+    ax.plot(ccp_alphas, depth_counts, color='k', drawstyle='steps-post')
+    plt.show()
 
 if __name__ == '__main__':
-    glove_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove"
+    properties_dir = path.normpath(path.join(os.getcwd(), "../../resources/properties.ini"))
+    config = RawConfigParser()
+    config.read(properties_dir)
 
-    X = np.load(os.path.join(glove_dir, "standard", "predictor-matrix.npy"))
+    # There are "standard", "twitter", and "common-crawl" embeddings.
+    glove_dir = path.join(config.get("Embeddings", "glove.directory"), "standard")
+
+    X = np.load(path.join(glove_dir, "predictor-matrix.npy"))
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
 
-    y = np.load(os.path.join(glove_dir, "standard", "response-matrix.npy"))
+    y = np.load(path.join(glove_dir, "response-matrix.npy"))
     y = np.argmax(y, axis=1)
 
     ccp_alphas = np.arange(1, 12) * 1e-3

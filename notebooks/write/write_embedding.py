@@ -1,27 +1,23 @@
-#%% Create embedding dict.
-
-# TODO: remove stop-words and non-words
-
 import csv
 import os
-import spacy
 import matplotlib.pyplot as plt
 import numpy as np
+import spacy
 import sys
 
+from configparser import RawConfigParser
+from os import path
 from language_prep import embeddings
 from language_prep.preprocess import is_viable_token
 from sklearn.manifold import TSNE
 
-project_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp"
-glove_dir = os.path.join(project_dir, "resources", "glove")
-
+# A method to write GloVe embeddings which results in three saved numpy arrays:
+# An array of predictors, X, which are the average embeddings of documents.
+# An array of responses, Y, which are the labels of documents.
+# An array of average embeddings over all documents for each label. This should be much smaller than (1).
 def write_glove_embedding(ocr_csv_dir: str, embedding_dir: str, save_to_dir: str, n_labels: int, n_dims: int,
                           max_doc_count: int, vis: bool = False):
-    print("Creating embedding dict...")
-    embedding_dict = embeddings.create_embedding_dict(dir_=embedding_dir)
-    print("Done.")
-
+    embedding_dict = embeddings.create_glove_dict(dir_=embedding_dir)
     nlp = spacy.load('en_core_web_sm')
 
     predictor_matrix = np.zeros((max_doc_count, n_dims))
@@ -49,7 +45,6 @@ def write_glove_embedding(ocr_csv_dir: str, embedding_dir: str, save_to_dir: str
                 avg_embedding /= word_count
 
             avg_embedding_matrix[label] += avg_embedding
-
             predictor_matrix[doc_count] += avg_embedding
             response = np.zeros(n_labels)
             response[label] = 1
@@ -60,29 +55,29 @@ def write_glove_embedding(ocr_csv_dir: str, embedding_dir: str, save_to_dir: str
 
             if doc_count >= max_doc_count:
                 break
-            if doc_count % (2 ** 8) == 0:
+            if doc_count % (2 ** 10) == 0:
                 print(f"{doc_count}...")
-                # print(f"{avg_embedding[0]: .3f}, {avg_embedding[1]: .3f}, {avg_embedding[2]: .3f}, ...")
 
+    # Remember to normalize embeddings.
     for i in range(n_labels):
         avg_embedding_matrix[i] /= label_counts[i]
 
-    sample_n = 1024
-    X = predictor_matrix[:sample_n, :]
-    Y = np.argmax(response_matrix[:sample_n, :], axis=1)
+    X = predictor_matrix[:, :]
+    Y = np.argmax(response_matrix, axis=1)
 
     if vis:
         scatter_predictors(X=X, Y=Y)
 
-    np.save(os.path.join(save_to_dir, "avg-embedding-matrix.npy"), avg_embedding_matrix)
-    np.save(os.path.join(save_to_dir, "predictor-matrix.npy"), predictor_matrix)
-    np.save(os.path.join(save_to_dir, "response-matrix.npy"), response_matrix)
+    np.save(path.join(save_to_dir, "avg-embedding-matrix.npy"), avg_embedding_matrix)
+    np.save(path.join(save_to_dir, "predictor-matrix.npy"), predictor_matrix)
+    np.save(path.join(save_to_dir, "response-matrix.npy"), response_matrix)
 
+# A useful visualization to see clustering and structure in lower dimensions.
 def scatter_predictors(X: np.ndarray, Y: np.ndarray):
     tsne = TSNE(n_components=2, random_state=53)
     X = tsne.fit_transform(X)
 
-    # TODO: make this less static
+    # TODO: make this less "static"?
     label_color_pairs = (
         (0, 'k'), (1, 'r'), (2, 'm'), (3, 'b'), (4, 'c'), (5, 'g'), (6, 'y')
     )
@@ -117,16 +112,29 @@ def scatter_on_label(X: np.ndarray, Y: np.ndarray, label: int, color: str = 'k',
     return plt.scatter(d1, d2, color=color)
 
 if __name__ == '__main__':
+    properties_dir = path.normpath(path.join(os.getcwd(), "../../resources/properties.ini"))
+    config = RawConfigParser()
+    config.read(properties_dir)
+
+    glove_dir = config.get("Embeddings", "glove.directory")
+
+    glove_crawl_dir = path.join(glove_dir, "common-crawl/glove.42B.300d.txt")
+    glove_twitter_dir = path.join(glove_dir, "twitter/glove.twitter.27B.200d.txt")
+    glove_standard_dir = path.join(glove_dir, "standard/glove.6B.300d.txt")
+
+    cdip_ocr_dir = config.get("Datasets", "ocrDataset.path")
+    n_labels = int(config.get("Datasets", "dataset.nLabels"))
+
     for embedding_dir, subfolder, n_dims in (
-        (os.path.join(glove_dir, "common-crawl", "glove.42B.300d.txt"), "common-crawl", 300),
-        (os.path.join(glove_dir, "standard", "glove.6B.300d.txt"), "standard", 300),
-        (os.path.join(glove_dir, "twitter", "glove.twitter.27B.200d.txt"), "twitter", 200)
+        (glove_crawl_dir, "common-crawl", 300),
+        (glove_standard_dir, "standard", 300),
+        (glove_twitter_dir, "twitter", 200)
     ):
         write_glove_embedding(
-            ocr_csv_dir="/Users/ericcarlson/Desktop/Datasets/csv/CDIP_OCR.csv",
+            ocr_csv_dir=cdip_ocr_dir,
             embedding_dir=embedding_dir,
-            save_to_dir=os.path.join(glove_dir, subfolder),
-            n_labels=16,
+            save_to_dir=path.join(glove_dir, subfolder),
+            n_labels=n_labels,
             n_dims=n_dims,
             max_doc_count=4096,
         )

@@ -2,13 +2,15 @@ import lightgbm as lgb
 import numpy as np
 import os
 
+from configparser import RawConfigParser
 from notebooks.util.loaders import load_csv_labels, load_csv_ngrams
+from os import path
 from sklearn.linear_model import SGDClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from time import time
 
-# Evaluate predictions using LightGBM boosted trees.
+# Evaluate predictions with LightGBM boosted trees.
 def evaluate_on_boosted_trees(X_train, X_test, X_val, Y_train, Y_test, Y_val, n_classes: int):
     lgb_train_set = lgb.Dataset(data=X_train, label=Y_train, free_raw_data=False)
     lgb_valid_set = lgb.Dataset(data=X_val, label=Y_val, free_raw_data=False)
@@ -49,7 +51,7 @@ def evaluate_on_boosted_trees(X_train, X_test, X_val, Y_train, Y_test, Y_val, n_
     print(f"{100 * val_accuracy: .4f} accuracy on validation set")
     print(f"{100 * train_accuracy: .4f} accuracy on train set")
 
-# Evaluate predictions using a linear classifier.
+# Evaluate predictions with a linear classifier.
 def evaluate_on_sgd(X_train, X_test, X_val, Y_train, Y_test, Y_val):
     sgd = SGDClassifier(
         loss='hinge',
@@ -69,25 +71,27 @@ def evaluate_on_sgd(X_train, X_test, X_val, Y_train, Y_test, Y_val):
     print(f"Accuracy on test:        {100 * sgd.score(X_test, Y_test): .4f}")
 
 if __name__ == '__main__':
-    base_dir = "/Users/ericcarlson/Desktop"
-    csv_dir = os.path.join(base_dir, "Datasets", "csv", "CDIP_OCR.csv")
+    properties_dir = path.normpath(path.join(os.getcwd(), "../../resources/properties.ini"))
+    config = RawConfigParser()
+    config.read(properties_dir)
+
+    ocr_csv_dir = config.get("Datasets", "ocrDataset.path")
 
     doc_count = 8192
 
     t0 = time()
-    X = load_csv_ngrams(csv_dir, doc_count)
-    Y = load_csv_labels(csv_dir, doc_count)
+    X = load_csv_ngrams(ocr_csv_dir, doc_count)
+    Y = load_csv_labels(ocr_csv_dir, doc_count)
     dt = time() - t0
     print(f"{dt: .4f} secs to generate predictors and responses")
 
     X_train, X_not_train, Y_train, Y_not_train = train_test_split(X, Y, test_size=0.30)
     X_val, X_test, Y_val, Y_test = train_test_split(X_not_train, Y_not_train, test_size=0.50)
 
-    # Check feature counts (sanity check).
     # print('-' * 80)
     # for i in range(8):
     #     print(f"Number of features in X: {X[i, :].getnnz()}")
     # print('-' * 80)
 
     evaluate_on_boosted_trees(X_train, X_val, X_test, Y_train, Y_val, Y_test, n_classes=16)
-    # evaluate_on_sgd(X_train, X_val, X_test, Y_train, Y_val, Y_test)
+    evaluate_on_sgd(X_train, X_val, X_test, Y_train, Y_val, Y_test)

@@ -1,38 +1,26 @@
-#%% Set up command-line args.
+#%% Set up baseline information regarding dataset.
 
-import argparse
+import os
 
-parser = argparse.ArgumentParser()
+from configparser import RawConfigParser
+from os import path
 
-parser.add_argument("-b", "--base",
-                    default="/Users/ericcarlson/Desktop/Datasets/Document Classification/RVL_CDIP/images",
-                    help="The location of the base directory where the images referenced in the dataset reside.")
-parser.add_argument("-d", "--dataset",
-                    default="/Users/ericcarlson/Desktop/Datasets/Document Classification/RVL_CDIP/labels/train.txt",
-                    help="The location of the dataset.")
-parser.add_argument("-c", "--csv",
-                    default="/Users/ericcarlson/Desktop/Datasets/csv/CDIP_OCR.csv",
-                    help="The location of the csv to write to.")
-parser.add_argument("-f", "--format",
-                    default="txt",
-                    help="The data format of the dataset. As of now, this could be txt or csv.")
-parser.add_argument("-l", "--labels",
-                    default="16",
-                    help="The number of distinct labels assigned to the images.")
-parser.add_argument("--count",
-                    default="8192",
-                    help="The maximum number of images to be translated and written to the csv.")
+properties_dir = path.normpath(path.join(os.getcwd(), "../../resources/properties.ini"))
+config = RawConfigParser()
+config.read(properties_dir)
 
-args = vars(parser.parse_args())
+# The base directory where the images referenced by the dataset reside.
+base_img_dir = config.get("Datasets", "imageDataset.baseImageDir")
+# The location of a text or csv dataset containing image locations and labels.
+dataset_dir = config.get("Datasets", "imageDataset.path")
+# The location of the csv to write OCR'd documents and labels to.
+ocr_csv_dir = config.get("Datasets", "ocrDataset.path")
 
-base_img_dir = args['base']
-dataset_dir = args['dataset']
-csv_dir = args['csv']
-data_format = args['format']
-max_count = int(args['count'])
-label_num = int(args['labels'])
+data_format = "txt"
+max_count = 8192
+n_labels = 16
 
-labels = [0] * label_num
+labels = [0] * n_labels
 
 #%% Write OCR'd docs and labels to a CSV file.
 
@@ -51,12 +39,12 @@ nlp = spacy.load('en_core_web_sm')
 word_count = 0
 real_word_count = 0
 
-with open(csv_dir, 'w') as csv_file:
+with open(ocr_csv_dir, 'w') as csv_file:
     writer = csv.writer(csv_file, delimiter=',', quotechar='*')
 
     with TxtImageDataset(dataset_dir) as data_file:
         for img_dir, label in data_file:
-            abs_img_dir = os.path.join(base_img_dir, img_dir)
+            abs_img_dir = path.join(base_img_dir, img_dir)
             labels[label] += 1
 
             # TODO: de-noise, too?

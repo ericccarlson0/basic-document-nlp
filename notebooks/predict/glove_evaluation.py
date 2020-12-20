@@ -1,29 +1,31 @@
-#%% Generate matrices, remove NaN and infinite values.
+#%% Generate matrices.
 
 import numpy as np
 import os
 
+from configparser import RawConfigParser
+from os import path
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from notebooks.util.logging import numerical_list_to_string
-
-glove_dir = "/Users/ericcarlson/Desktop/Personal Projects/basic-document-nlp/resources/glove"
 
 predictors = {}
 responses = {}
 
 def perform_classification(embedding_dir: str, classifier, name: str):
+    # There is a dict that maps a dir to the matrices that it generated.
+    # These are called "predictors" and "responses".
     if embedding_dir not in predictors:
-        X = np.load(os.path.join(embedding_dir, "predictor-matrix.npy"))
+        X = np.load(path.join(embedding_dir, "predictor-matrix.npy"))
         X[np.isinf(X)] = 0
         X[np.isnan(X)] = 0
 
         scaler = StandardScaler()
         X = scaler.fit_transform(X)
-        print("mean: ", numerical_list_to_string(scaler.mean_))
-        print("var: ", numerical_list_to_string(scaler.var_))
+        # print("mean: ", numerical_list_to_string(scaler.mean_))
+        # print("var: ", numerical_list_to_string(scaler.var_))
 
-        Y = np.load(os.path.join(embedding_dir, "response-matrix.npy"))
+        Y = np.load(path.join(embedding_dir, "response-matrix.npy"))
         Y = np.argmax(Y, axis=1)
 
         predictors[embedding_dir] = X
@@ -32,10 +34,9 @@ def perform_classification(embedding_dir: str, classifier, name: str):
         X = predictors[embedding_dir]
         Y = responses[embedding_dir]
 
-    X_train, X_test = train_test_split(X)
-    Y_train, Y_test = train_test_split(Y)
-    print(f"X train, test: {X_train.shape}, {X_test.shape}")
-    print(f"Y train, test: {Y_train.shape}, {Y_test.shape}")
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y)
+    # print(f"X train, test: {X_train.shape}, {X_test.shape}")
+    # print(f"Y train, test: {Y_train.shape}, {Y_test.shape}")
 
     t0 = time()
     print(f"Training {name}...")
@@ -57,7 +58,7 @@ def zero_if_huge(n: int):
     else:
         return n
 
-#%% Perform comparisons.
+#%% Create classifiers and regressors.
 
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
@@ -80,7 +81,6 @@ ridge_regression = Ridge(solver='auto')
 lasso_regression = Lasso(max_iter=2**15)
 elastic_regression = ElasticNet(max_iter=2*15, alpha=1.0, l1_ratio=0.5)
 
-# solver = 'eigen', shrinkage = 'auto'
 lda = LinearDiscriminantAnalysis(solver='eigen', shrinkage='auto')
 qda = QuadraticDiscriminantAnalysis()
 
@@ -106,17 +106,27 @@ classifiers = (
     *random_forests
 )
 
+#%% Perform comparisons.
+
 if __name__ == '__main__':
-    for subfolder in ("standard", "twitter"):
+    properties_dir = path.normpath(path.join(os.getcwd(), "../../resources/properties.ini"))
+    config = RawConfigParser()
+    config.read(properties_dir)
+
+    glove_dir = config.get("Embeddings", "glove.directory")
+
+    # Evaluate all different methods.
+    for subfolder in ("common-crawl", "standard", "twitter"):
         for name, classifier in classifiers:
             perform_classification(
-                embedding_dir=os.path.join(glove_dir, subfolder),
+                embedding_dir=path.join(glove_dir, subfolder),
                 classifier=classifier,
                 name=name
             )
 
     print('-' * 80)
 
+    # Check some Random Forest statistics.
     for name, random_forest in random_forests:
         trees = random_forest.estimators_
         print(f"Decision tree sizes for {name}")

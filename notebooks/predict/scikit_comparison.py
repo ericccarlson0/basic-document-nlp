@@ -1,6 +1,6 @@
 #%% Options parsing.
 
-# Adapted from the following resource:
+# All of this is based on the following resource:
 # https://scikit-learn.org/stable/auto_examples/text/plot_document_classification_20newsgroups.html#sphx-glr-auto-examples-text-plot-document-classification-20newsgroups-py
 
 import logging
@@ -89,7 +89,6 @@ if opts.use_hashing:
     vectorizer = HashingVectorizer(stop_words='english', n_features=opts.n_features, alternate_sign=False)
     X_train = vectorizer.transform(data_train.data)
 else:
-    # TODO: sublinear_tf and max_df are conscious choices, and should be evaluated as such
     vectorizer = TfidfVectorizer(stop_words='english', sublinear_tf=True, max_df=0.5)
     X_train = vectorizer.fit_transform(data_train.data)
 
@@ -116,7 +115,6 @@ if opts.select_chi2:
     X_test = k_best.transform(X_test)
 
     if feature_names:
-        # TODO: what is get_support?
         feature_names = [feature_names[i] for i in k_best.get_support(indices=True)]
 
     dt = time() - t0

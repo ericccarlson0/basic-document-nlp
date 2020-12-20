@@ -1,32 +1,36 @@
 import glob
 import os
-import pandas as pd
 import random
 import spacy
+
+from configparser import RawConfigParser
+from os import path
 from spacy.util import minibatch, compounding
 
-model_destination = "../../resources/spacy"
-imdb_dir = "/Users/ericcarlson/Desktop/Datasets/Document Classification/ACL_IMDB"
+properties_dir = path.normpath(path.join(os.getcwd(), "../../resources/properties.ini"))
+config = RawConfigParser()
+config.read(properties_dir)
+
+imdb_dir = config.get("Datasets", "imdb.directory")
+model_destination = None
 
 def load_data(data_dir: str,
               split: float = 0.8,
               max_count: int = 128) -> tuple:
     # spaCy uses  a list of (text, label_dict) tuples to train
     spacy_data = []
-    # labels are in sub-directories
+    # NOTE: labels are in sub-directories in this dataset
     for label in ["pos", "neg"]:
         count = 0
-        sub_dir = os.path.join(data_dir, label)
 
-        for fname in glob.iglob(os.path.join(sub_dir, "*.txt")):
+        for fname in glob.iglob(path.join(data_dir, label, "*.txt")):
             if count >= max_count:
                 break
 
             with open(fname) as textfile:
                 text = textfile.read()
-                # do some basic pre-processing
                 text = text.replace("<br /> ", "\n\n")
-                # "cats" refers to categories in spaCy
+                # NOTE: "cats" refers to "categories" here
                 label_dict = {
                     "cats": {
                         "P": "pos" == label,
@@ -36,20 +40,20 @@ def load_data(data_dir: str,
                 spacy_data.append((text, label_dict))
                 count += 1
 
-    # shuffle and divide spaCy data
     random.shuffle(spacy_data)
     split_at = int(len(spacy_data) * split)
-    # return train and test sets
+
     return spacy_data[:split_at], spacy_data[split_at:]
 
 
 def train_model(train_data: list,
                 test_data: list,
-                epochs: int = 4
+                epochs: int = 8
                 ) -> None:
-    nlp = spacy.load("en_core_web_sm")
+    nlp = spacy.load('en_core_web_sm')
+
+    # NOTE: there are ensemble, simple_cnn, and BoW models in spaCy, too.
     if "textcat" not in nlp.pipe_names:
-        # TODO: test ensemble, simple_cnn, bow
         textcat = nlp.create_pipe(
             "textcat", config={"architecture": "simple_cnn"}
         )
@@ -71,6 +75,7 @@ def train_model(train_data: list,
         print("\t".join(["L", "P", "R", "F"]))
         for i in range(epochs):
             print(f"epoch {i}")
+
             loss = {}
             random.shuffle(train_data)
             batches = minibatch(train_data, size=batch_sizes)
@@ -83,7 +88,7 @@ def train_model(train_data: list,
                            sgd=optimizer,
                            losses=loss
                            )
-            # Evaluate the model in its current state.
+
             with textcat.model.use_params(optimizer.averages):
                 scores = evaluate_model(
                     tokenizer=nlp.tokenizer,
@@ -95,9 +100,9 @@ def train_model(train_data: list,
                       f"{scores['R']: .3f}\t"
                       f"{scores['F']: .3f}")
 
-        # Save the model.
-        with nlp.use_params(optimizer.averages):
-            nlp.to_disk(model_destination)
+        if model_destination:
+            with nlp.use_params(optimizer.averages):
+                nlp.to_disk(model_destination)
 
 
 def evaluate_model(tokenizer,
@@ -114,7 +119,7 @@ def evaluate_model(tokenizer,
 
         for predicted_label, score in text.cats.items():
             # just iterate over the one label, reduce duplication
-            if predicted_label == "N":
+            if predicted_label != "P":
                 continue
 
             if score >= 0.5 and p_label:
@@ -141,13 +146,24 @@ if __name__ == '__main__':
     max_count_ = 1024
     epochs_ = 16
 
-    train_set, test_set = load_data(data_dir=os.path.join(imdb_dir, "train"), split=0.8, max_count=max_count_)
-    train_model(train_set, test_set, epochs=epochs_)
+    train_set, test_set = load_data(
+        data_dir=path.join(imdb_dir, "train"),
+        split=0.8,
+        max_count=max_count_
+    )
+    train_model(
+        train_set,
+        test_set,
+        epochs=epochs_
+    )
 
-    nlp_ = spacy.load(model_destination)
-    tokenizer_ = nlp_.tokenizer
-    textcat_ = nlp_.get_pipe("textcat")
+    if model_destination:
+        nlp_ = spacy.load(model_destination)
+        tokenizer_ = nlp_.tokenizer
+        textcat_ = nlp_.get_pipe("textcat")
 
-    text_ = next(textcat_.pipe([tokenizer_("The movie was bad and I would not recommend it.")]))
-    predicted_label_, score_ = text_.cats.items()
-    print(predicted_label_, score_)
+        text_ = next(textcat_.pipe(
+            [tokenizer_("The movie was bad and I would not recommend it.")])
+        )
+        predicted_label_, score_ = text_.cats.items()
+        print(predicted_label_, score_)
